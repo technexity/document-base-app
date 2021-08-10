@@ -13,6 +13,8 @@
 
 @interface DocumentBrowserViewController () <UIDocumentBrowserViewControllerDelegate>
 
+@property (assign) BOOL isNewDocument;
+
 @end
 
 @implementation DocumentBrowserViewController
@@ -31,7 +33,7 @@
     
     // Do any additional setup after loading the view.
     
-    self.shouldShowFileExtensions = YES;
+    self.isNewDocument = NO;
 }
 
 #pragma mark UIDocumentBrowserViewControllerDelegate
@@ -43,6 +45,7 @@
     
     Document *document = [[Document alloc] initWithFileURL:fileURL];
     NSURL *newDocumentURL = document.fileURL;
+    self.isNewDocument = YES;
     
     [document saveToURL:newDocumentURL forSaveOperation:UIDocumentSaveForCreating completionHandler:^(BOOL success) {
         if (!success) {
@@ -73,20 +76,17 @@
         return;
     }
     
-    [[IDAuthenticator sharedInstance] authenicateWithCompletionHandler:^(BOOL success, NSString * _Nonnull errorMsg) {
-        if (success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                
-                // Present the Document View Controller for the first document that was picked.
-                // If you support picking multiple items, make sure you handle them all.
-                [self presentDocumentAtURL:sourceURL];
-                
-            });
-        }
-    }];
+    self.isNewDocument = NO;
+    
+    // Present the Document View Controller for the first document that was picked.
+    // If you support picking multiple items, make sure you handle them all.
+    [self presentDocumentAtURL:sourceURL];
 }
 
 - (void)documentBrowser:(UIDocumentBrowserViewController *)controller didImportDocumentAtURL:(NSURL *)sourceURL toDestinationURL:(NSURL *)destinationURL {
+    
+    self.isNewDocument = NO;
+    
     // Present the Document View Controller for the new newly created document
     [self presentDocumentAtURL:destinationURL];
 }
@@ -98,19 +98,27 @@
 // MARK: Document Presentation
 
 - (void)presentDocumentAtURL:(NSURL *)documentURL {
-    /*UIStoryboard *storyBoard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
-    DocumentViewController *documentViewController = [storyBoard instantiateViewControllerWithIdentifier:@"DocumentViewController"];
-    documentViewController.document = [[Document alloc] initWithFileURL:documentURL];
-    documentViewController.modalPresentationStyle = UIModalPresentationFullScreen;
-    [self presentViewController:documentViewController animated:YES completion:nil];*/
-    
+    [self presentDocumentAtURL:documentURL requireAuthenticated:!self.isNewDocument];
+}
+
+- (void)presentDocumentAtURL:(NSURL *)documentURL requireAuthenticated:(BOOL)requireAuthenticated {
     DocumentEditorController *vc = [[DocumentEditorController alloc] init];
     vc.viewController = self;
     vc.createNew = NO;
     vc.document = [[Document alloc] initWithFileURL:documentURL];
-    
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-    [self presentViewController:nav animated:YES completion:nil];
+    
+    if (requireAuthenticated) {
+        [[IDAuthenticator sharedInstance] authenicateWithCompletionHandler:^(BOOL success, NSString * _Nonnull errorMsg) {
+            if (success) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self presentViewController:nav animated:YES completion:nil];
+                });
+            }
+        }];
+    } else {
+        [self presentViewController:nav animated:YES completion:nil];
+    }
 }
 
 @end
