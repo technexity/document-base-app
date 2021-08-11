@@ -51,12 +51,25 @@
     //[self.view addGestureRecognizer:tapRecognizer];
 }
 
+ - (void)viewWillAppear:(BOOL)animated {
+     [super viewWillAppear:animated];
+     
+     // Access the document
+     [self.document openWithCompletionHandler:^(BOOL success) {
+         if (success) {
+             // Display the content of the document, e.g.:
+             self.nameTextField.text = [self.document.fileURL lastPathComponent];
+             self.contentTextView.text = self.document.userText;
+         } else {
+             // Make sure to handle the failed import appropriately, e.g., by presenting an error message to the user.
+         }
+     }];
+     
+ }
+     
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    if (self.createNew) {
-        return NUMBER_OF_SECTIONS - 1;
-    }
     return NUMBER_OF_SECTIONS;
 }
 
@@ -155,18 +168,14 @@
     
     if (indexPath.section == SECTION_NAME) {
         if (indexPath.row == 0) {
-            if (!self.createNew) {
-                self.nameTextField.text = [self.document.fileURL lastPathComponent];
-            }
-            [self.nameTextField becomeFirstResponder];
+            //self.nameTextField.text = [self.document.fileURL lastPathComponent];
+            //[self.nameTextField becomeFirstResponder];
         }
     }
     
     if (indexPath.section == SECTION_CONTENT) {
         if (indexPath.row == 0) {
-            if (!self.createNew) {
-                self.contentTextView.text = self.document.text;
-            }
+            //self.contentTextView.text = self.document.userText;
         }
     }
     
@@ -255,7 +264,7 @@
     }
     
     self.document.fileName = self.nameTextField.text;
-    self.document.text = self.contentTextView.text;
+    self.document.userText = self.contentTextView.text;
     
     [self dismissViewControllerAnimated:YES completion:^ {
         

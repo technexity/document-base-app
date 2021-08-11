@@ -11,9 +11,11 @@
 #import "DocumentEditorController.h"
 #import "IDAuthenticator.h"
 
+#define DEFAULT_FILE_NAME @"MyDoc.tsdoc"
+
 @interface DocumentBrowserViewController () <UIDocumentBrowserViewControllerDelegate>
 
-@property (assign) BOOL isNewDocument;
+@property (assign) BOOL openWithoutAuthentication;
 
 @end
 
@@ -32,42 +34,43 @@
     // Specify the allowed content types of your application via the Info.plist.
     
     // Do any additional setup after loading the view.
-    
-    self.isNewDocument = NO;
+    self.openWithoutAuthentication = NO;
 }
 
 #pragma mark UIDocumentBrowserViewControllerDelegate
 
 - (void)documentBrowser:(UIDocumentBrowserViewController *)controller didRequestDocumentCreationWithHandler:(void (^)(NSURL * _Nullable, UIDocumentBrowserImportMode))importHandler {
     
+    self.openWithoutAuthentication = YES;
     NSFileManager *fileManager = [[NSFileManager alloc] init];
-    NSURL *fileURL = [fileManager.temporaryDirectory URLByAppendingPathComponent:@"doc.epd"];
+    NSURL *fileURL = [fileManager.temporaryDirectory URLByAppendingPathComponent:DEFAULT_FILE_NAME];
     
     Document *document = [[Document alloc] initWithFileURL:fileURL];
-    NSURL *newDocumentURL = document.fileURL;
-    self.isNewDocument = YES;
-    
-    [document saveToURL:newDocumentURL forSaveOperation:UIDocumentSaveForCreating completionHandler:^(BOOL success) {
+    [document saveToURL:fileURL forSaveOperation:UIDocumentSaveForCreating completionHandler:^(BOOL success) {
         if (!success) {
-            NSLog(@"There was an error saving the document - %@", newDocumentURL);
+            NSLog(@"There was an error saving the document - %@", fileURL);
         }
+        NSLog(@"File created at %@", fileURL);
         
-        NSLog(@"File created at %@", newDocumentURL);
+        [document closeWithCompletionHandler:^(BOOL success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                if (!success) {
+                    NSLog(@"Failed to close - %@", fileURL);
+                }
+                
+                // Set the URL for the new document here. Optionally, you can present a template chooser before calling the importHandler.
+                // Make sure the importHandler is always called, even if the user cancels the creation request.
+                if (fileURL != nil) {
+                    importHandler(fileURL, UIDocumentBrowserImportModeMove);
+                } else {
+                    importHandler(fileURL, UIDocumentBrowserImportModeNone);
+                }
+                
+            });
+        }];
         
-        dispatch_async(dispatch_get_main_queue(), ^{
-            
-            // Set the URL for the new document here. Optionally, you can present a template chooser before calling the importHandler.
-            // Make sure the importHandler is always called, even if the user cancels the creation request.
-            if (newDocumentURL != nil) {
-                importHandler(newDocumentURL, UIDocumentBrowserImportModeMove);
-            } else {
-                importHandler(newDocumentURL, UIDocumentBrowserImportModeNone);
-            }
-            
-        });
     }];
-    
-    
 }
 
 -(void)documentBrowser:(UIDocumentBrowserViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)documentURLs {
@@ -76,16 +79,12 @@
         return;
     }
     
-    self.isNewDocument = NO;
-    
     // Present the Document View Controller for the first document that was picked.
     // If you support picking multiple items, make sure you handle them all.
     [self presentDocumentAtURL:sourceURL];
 }
 
 - (void)documentBrowser:(UIDocumentBrowserViewController *)controller didImportDocumentAtURL:(NSURL *)sourceURL toDestinationURL:(NSURL *)destinationURL {
-    
-    self.isNewDocument = NO;
     
     // Present the Document View Controller for the new newly created document
     [self presentDocumentAtURL:destinationURL];
@@ -98,26 +97,25 @@
 // MARK: Document Presentation
 
 - (void)presentDocumentAtURL:(NSURL *)documentURL {
-    [self presentDocumentAtURL:documentURL requireAuthenticated:!self.isNewDocument];
-}
-
-- (void)presentDocumentAtURL:(NSURL *)documentURL requireAuthenticated:(BOOL)requireAuthenticated {
     DocumentEditorController *vc = [[DocumentEditorController alloc] init];
     vc.viewController = self;
-    vc.createNew = NO;
     vc.document = [[Document alloc] initWithFileURL:documentURL];
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
     
-    if (requireAuthenticated) {
+    if (self.openWithoutAuthentication) {
+        [self presentViewController:nav animated:YES completion:^{
+            self.openWithoutAuthentication = NO;
+        }];
+    } else {
         [[IDAuthenticator sharedInstance] authenicateWithCompletionHandler:^(BOOL success, NSString * _Nonnull errorMsg) {
             if (success) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    [self presentViewController:nav animated:YES completion:nil];
+                    [self presentViewController:nav animated:YES completion:^{
+                        self.openWithoutAuthentication = NO;
+                    }];
                 });
             }
         }];
-    } else {
-        [self presentViewController:nav animated:YES completion:nil];
     }
 }
 
