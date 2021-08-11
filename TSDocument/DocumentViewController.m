@@ -22,7 +22,7 @@
     [self.document openWithCompletionHandler:^(BOOL success) {
         if (success) {
             // Display the content of the document, e.g.:
-            self.documentNameLabel.text = self.document.text;
+            self.documentNameLabel.text = self.document.userText;
         } else {
             // Make sure to handle the failed import appropriately, e.g., by presenting an error message to the user.
         }

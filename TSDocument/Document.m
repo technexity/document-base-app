@@ -9,18 +9,14 @@
 
 @implementation Document
 
-- (instancetype)initWithFileURL:(NSURL *)url {
-    self = [super initWithFileURL:url];
-    if (self) {
-        self.text = @"";
-    }
-    return self;
-}
-
 - (id)contentsForType:(NSString*)typeName error:(NSError **)errorPtr {
     // Encode your document with an instance of NSData or NSFileWrapper
     
-    NSData *data = [self.text dataUsingEncoding:NSUTF8StringEncoding];
+    if (self.userText == nil) {
+        self.userText = @"";
+    }
+    
+    NSData *data = [self.userText dataUsingEncoding:NSUTF8StringEncoding];
     
     return data;
 }
@@ -29,7 +25,7 @@
     // Load your document from contents
     
     NSData *data = contents;
-    self.text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    self.userText = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     
     return YES;
 }

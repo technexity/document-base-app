@@ -10,6 +10,6 @@
 @interface Document : UIDocument
 
 @property (nonatomic, strong) NSString * fileName;
-@property (nonatomic, strong) NSString * text;
+@property (nonatomic, strong) NSString * userText;
 
 @end

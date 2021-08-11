@@ -15,10 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface DocumentEditorController : UIViewController
 
 @property (nonatomic, strong) Document * document;
-@property (nonatomic, strong) NSString * fileName;
-@property (nonatomic, strong) NSString * text;
 
-@property (nonatomic, assign) BOOL createNew;
 @property (nonatomic, weak) DocumentBrowserViewController * viewController;
 
 @end

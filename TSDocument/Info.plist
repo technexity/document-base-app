@@ -8,9 +8,9 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string></string>
+			<string>TS Document</string>
 			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
+			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
@@ -18,7 +18,7 @@
 				<string>com.technexity.plain-text</string>
 			</array>
 			<key>NSUbiquitousDocumentUserActivityType</key>
-			<string>$(PRODUCT_BUNDLE_IDENTIFIER).ts-document</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).technexity-document</string>
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
@@ -36,8 +36,6 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to authenticate</string>
@@ -68,7 +66,7 @@
 	</array>
 	<key>UISupportsDocumentBrowser</key>
 	<true/>
-	<key>UTImportedTypeDeclarations</key>
+	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
 			<key>UTTypeConformsTo</key>
@@ -85,7 +83,7 @@
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>epd</string>
+					<string>tsdoc</string>
 				</array>
 			</dict>
 		</dict>
