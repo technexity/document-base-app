@@ -1,6 +1,6 @@
 //
 //  DocumentEditorController.m
-//  EncryptNote
+//  TSDocument
 //
 //  Created by Nam Tran on 07/08/2021.
 //
@@ -51,21 +51,31 @@
     //[self.view addGestureRecognizer:tapRecognizer];
 }
 
- - (void)viewWillAppear:(BOOL)animated {
-     [super viewWillAppear:animated];
-     
-     // Access the document
-     [self.document openWithCompletionHandler:^(BOOL success) {
-         if (success) {
-             // Display the content of the document, e.g.:
-             self.nameTextField.text = [self.document.fileURL lastPathComponent];
-             self.contentTextView.text = self.document.userText;
-         } else {
-             // Make sure to handle the failed import appropriately, e.g., by presenting an error message to the user.
-         }
-     }];
-     
- }
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+
+    // register for keyboard notifications
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
+
+    // Access the document
+    [self.document openWithCompletionHandler:^(BOOL success) {
+        if (success) {
+            // Display the content of the document, e.g.:
+            [self.tableView reloadData];
+        } else {
+            // Make sure to handle the failed import appropriately, e.g., by presenting an error message to the user.
+        }
+    }];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    
+    // unregister for keyboard notifications while not visible.
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
+}
      
 #pragma mark - UITableViewDataSource
 
@@ -91,9 +101,16 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.section == SECTION_CONTENT) {
-        return 240.f;
+        return UITableViewAutomaticDimension;
     }
-    return 49.f;//UITableViewAutomaticDimension;
+    return 54.f;//UITableViewAutomaticDimension;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.section == SECTION_CONTENT) {
+        return 640;//UITableViewAutomaticDimension;
+    }
+    return 54.f;//UITableViewAutomaticDimension;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -144,6 +161,7 @@
             self.contentTextView.textAlignment = NSTextAlignmentLeft;
             self.contentTextView.font = [UIFont systemFontOfSize:20];
             self.contentTextView.tag = CONTENT_CONTROL_TAG;
+            self.contentTextView.scrollEnabled = NO;
             
             self.contentTextView.keyboardType = UIKeyboardTypeAlphabet; // keyboard type of ur choice
             self.contentTextView.returnKeyType = UIReturnKeyDone; // returnKey type for keyboard
@@ -168,14 +186,14 @@
     
     if (indexPath.section == SECTION_NAME) {
         if (indexPath.row == 0) {
-            //self.nameTextField.text = [self.document.fileURL lastPathComponent];
-            //[self.nameTextField becomeFirstResponder];
+            self.nameTextField.text = [self.document.fileURL lastPathComponent];
+            [self.nameTextField becomeFirstResponder];
         }
     }
     
     if (indexPath.section == SECTION_CONTENT) {
         if (indexPath.row == 0) {
-            //self.contentTextView.text = self.document.userText;
+            self.contentTextView.text = self.document.userText;
         }
     }
     
@@ -238,12 +256,56 @@
 #pragma mark - UITextViewDelegate
 
 - (void)textViewDidBeginEditing:(UITextView *)textView {
-    //[textView becomeFirstResponder];
+    [textView becomeFirstResponder];
+    // scroll to cursor
+    [self scrollToCursorForTextView:textView];
 }
 
 - (BOOL)textViewShouldEndEditing:(UITextView *)textView {
     [textView resignFirstResponder];
     return YES;
+}
+
+- (void)textViewDidChange:(UITextView *)textView {
+    [self.tableView beginUpdates]; // This will cause an animated update of
+    [self.tableView endUpdates];   // the height of your UITableViewCell
+    [self scrollToCursorForTextView:textView]; // OPTIONAL: Follow cursor
+}
+
+- (void)scrollToCursorForTextView: (UITextView *)textView {
+    CGRect cursorRect = [textView caretRectForPosition:textView.selectedTextRange.start];
+    cursorRect = [self.tableView convertRect:cursorRect fromView:textView];
+    if (![self rectVisible:cursorRect]) {
+        cursorRect.size.height += 8; // To add some space underneath the cursor
+        [self.tableView scrollRectToVisible:cursorRect animated:YES];
+    }
+}
+
+- (BOOL)rectVisible: (CGRect)rect {
+    CGRect visibleRect;
+    visibleRect.origin = self.tableView.contentOffset;
+    visibleRect.origin.y += self.tableView.contentInset.top;
+    visibleRect.size = self.tableView.bounds.size;
+    visibleRect.size.height -= self.tableView.contentInset.top + self.tableView.contentInset.bottom;
+    return CGRectContainsRect(visibleRect, rect);
+}
+
+#pragma mark - Keyboard
+
+- (void)keyboardWillShow:(NSNotification*)aNotification {
+    NSDictionary* info = [aNotification userInfo];
+    CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake(self.tableView.contentInset.top, 0.0, kbSize.height, 0.0);
+    self.tableView.contentInset = contentInsets;
+    self.tableView.scrollIndicatorInsets = contentInsets;
+}
+
+- (void)keyboardWillHide:(NSNotification*)aNotification {
+    [UIView animateWithDuration:0.35 animations:^{
+        UIEdgeInsets contentInsets = UIEdgeInsetsMake(self.tableView.contentInset.top, 0.0, 0.0, 0.0);
+        self.tableView.contentInset = contentInsets;
+        self.tableView.scrollIndicatorInsets = contentInsets;
+    }];
 }
 
 #pragma mark -

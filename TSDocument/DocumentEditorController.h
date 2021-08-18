@@ -1,6 +1,6 @@
 //
 //  DocumentEditorController.h
-//  EncryptNote
+//  TSDocument
 //
 //  Created by Nam Tran on 07/08/2021.
 //

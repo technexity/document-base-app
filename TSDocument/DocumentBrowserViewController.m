@@ -11,7 +11,7 @@
 #import "DocumentEditorController.h"
 #import "IDAuthenticator.h"
 
-#define DEFAULT_FILE_NAME @"MyDoc.tsdoc"
+#define DEFAULT_FILE_NAME @"MyDoc.secdoc"
 
 @interface DocumentBrowserViewController () <UIDocumentBrowserViewControllerDelegate>
 
