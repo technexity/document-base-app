@@ -15,7 +15,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.technexity.plain-text</string>
+				<string>com.technexity.SecureDocument.secdoc</string>
 			</array>
 			<key>NSUbiquitousDocumentUserActivityType</key>
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER).technexity-document</string>
@@ -78,12 +78,12 @@
 			<key>UTTypeIconFiles</key>
 			<array/>
 			<key>UTTypeIdentifier</key>
-			<string>com.technexity.plain-text</string>
+			<string>com.technexity.SecureDocument.secdoc</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>tsdoc</string>
+					<string>secdoc</string>
 				</array>
 			</dict>
 		</dict>
